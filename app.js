@@ -20,11 +20,18 @@ io.on("connection", function (socket) {
 
   // Handle the user sending their location
   socket.on("send-location", function (data) {
-    // Store the user's location
-    users[socket.id] = data;
+    const { username, latitude, longitude } = data;
+
+    // Store the user's location along with their username
+    users[socket.id] = { username, latitude, longitude };
 
     // Broadcast the user's location to all other users
-    io.emit("received-location", { id: socket.id, ...data });
+    io.emit("received-location", {
+      id: socket.id,
+      username,
+      latitude,
+      longitude,
+    });
   });
 
   // Handle user disconnection
@@ -36,6 +43,7 @@ io.on("connection", function (socket) {
     io.emit("user-disconnected", socket.id);
   });
 });
+
 
 app.get("/", function (req, res) {
   res.render("index");
