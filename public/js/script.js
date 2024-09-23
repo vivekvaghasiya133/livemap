@@ -51,6 +51,18 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 const markers = {};
 
 // Handle receiving location updates from the server
+// Handle receiving all existing users when a new user connects
+socket.on("all-users", (users) => {
+    Object.keys(users).forEach((id) => {
+        const { latitude, longitude } = users[id];
+        console.log(latitude, longitude);
+
+        // Create a marker for each existing user
+        markers[id] = L.marker([latitude, longitude]).addTo(map);
+    });
+});
+
+// Handle receiving location updates from the server
 socket.on("received-location", (data) => {
     const { id, latitude, longitude } = data;
 
