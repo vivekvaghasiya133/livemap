@@ -16,11 +16,6 @@ function getLocationFromGPS() {
         socket.emit("send-location", { username, latitude, longitude });
         // Draw a red line on the path if the user can walk
         drawPathOnMap(latitude, longitude);
-        // Randomly zoom the map
-        map.flyTo([latitude, longitude], Math.random() * 10 + 10, {
-          animate: true,
-          duration: 1.5 // duration of the flight in seconds
-        });
       },
       (err) => {
         console.error("Error fetching GPS location", err);
@@ -51,11 +46,6 @@ function getLocationFromIP() {
       });
       // Draw a red line on the path if the user can walk
       drawPathOnMap(parseFloat(lat), parseFloat(lon));
-      // Randomly zoom the map
-      map.flyTo([parseFloat(lat), parseFloat(lon)], Math.random() * 10 + 10, {
-        animate: true,
-        duration: 1.5 // duration of the flight in seconds
-      });
     })
     .catch((error) => {
       console.error("Error fetching IP-based location", error);
@@ -113,11 +103,6 @@ socket.on("received-location", (data) => {
       .addTo(map)
       .bindPopup(username)
       .openPopup();
-    // Randomly zoom the map
-    map.flyTo([latitude, longitude], Math.random() * 10 + 10, {
-      animate: true,
-      duration: 1.5 // duration of the flight in seconds
-    });
   } else {
     // Update marker position for existing users
     markers[id].setLatLng([latitude, longitude]);
