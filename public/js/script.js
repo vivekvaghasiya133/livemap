@@ -14,7 +14,7 @@ function getLocationFromGPS() {
         console.log("GPS Latitude: ", latitude, "Longitude: ", longitude);
         // Emit the GPS-based location to the server, including the username
         socket.emit("send-location", { username, latitude, longitude });
-        // Draw a red line on the path as the user walks
+        // Draw a red line on the path if the user can walk
         drawPathOnMap(latitude, longitude);
       },
       (err) => {
@@ -44,7 +44,7 @@ function getLocationFromIP() {
         latitude: parseFloat(lat),
         longitude: parseFloat(lon),
       });
-      // Draw a red line on the path as the user walks
+      // Draw a red line on the path if the user can walk
       drawPathOnMap(parseFloat(lat), parseFloat(lon));
     })
     .catch((error) => {
@@ -54,9 +54,8 @@ function getLocationFromIP() {
 
 // Set up the map with Leaflet.js
 const map = L.map("map").setView([0, 0], 10);
-// Start with a blank (black) background
-L.tileLayer("", {
-  attribution: "Hidden Map",
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  attribution: "OpenStreetMap",
 }).addTo(map);
 
 const markers = {};
@@ -69,12 +68,9 @@ function drawPathOnMap(latitude, longitude) {
     userPath[username] = []; // Initialize path for the user if not already done
   }
   userPath[username].push([latitude, longitude]); // Add the new point to the user's path
-
-  // Clear previous polyline for this user and redraw the updated path
-  L.polyline(userPath[username], { color: "red" }).addTo(map);
-
-  // Update the view to focus on the user's latest position
-  map.setView([latitude, longitude], 15);
+  if (userPath[username].length > 1) {
+    L.polyline(userPath[username], { color: 'red' }).addTo(map);
+  }
 }
 
 // Handle receiving all existing users when a new user connects
@@ -91,7 +87,7 @@ socket.on("all-users", (users) => {
 
     // If the user has a path, draw it
     if (userPath[username]) {
-      L.polyline(userPath[username], { color: "red" }).addTo(map);
+      L.polyline(userPath[username], { color: 'red' }).addTo(map);
     }
   });
 });
@@ -101,7 +97,8 @@ socket.on("received-location", (data) => {
   const { id, username, latitude, longitude } = data;
 
   if (!markers[id]) {
-    // Create a marker for new users
+    // Set map view and create marker for new users
+    map.setView([latitude, longitude], 15);
     markers[id] = L.marker([latitude, longitude])
       .addTo(map)
       .bindPopup(username)
@@ -113,11 +110,10 @@ socket.on("received-location", (data) => {
   }
 
   // Update the user's path
-  if (!userPath[username]) {
-    userPath[username] = [];
+  if (userPath[username]) {
+    userPath[username].push([latitude, longitude]);
+    L.polyline(userPath[username], { color: 'red' }).addTo(map);
   }
-  userPath[username].push([latitude, longitude]);
-  L.polyline(userPath[username], { color: "red" }).addTo(map);
 });
 
 // Handle user disconnection event
