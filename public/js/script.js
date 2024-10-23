@@ -16,6 +16,11 @@ function getLocationFromGPS() {
         socket.emit("send-location", { username, latitude, longitude });
         // Draw a red line on the path if the user can walk
         drawPathOnMap(latitude, longitude);
+        // Randomly zoom the map
+        map.flyTo([latitude, longitude], Math.random() * 10 + 10, {
+          animate: true,
+          duration: 1.5 // duration of the flight in seconds
+        });
       },
       (err) => {
         console.error("Error fetching GPS location", err);
@@ -46,6 +51,11 @@ function getLocationFromIP() {
       });
       // Draw a red line on the path if the user can walk
       drawPathOnMap(parseFloat(lat), parseFloat(lon));
+      // Randomly zoom the map
+      map.flyTo([parseFloat(lat), parseFloat(lon)], Math.random() * 10 + 10, {
+        animate: true,
+        duration: 1.5 // duration of the flight in seconds
+      });
     })
     .catch((error) => {
       console.error("Error fetching IP-based location", error);
@@ -60,12 +70,16 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 
 const markers = {};
 const pathPoints = []; // Array to store path points
+const userPath = {}; // Object to store user paths
 
 // Function to draw a red line on the path
 function drawPathOnMap(latitude, longitude) {
-  pathPoints.push([latitude, longitude]); // Add the new point to the path
-  if (pathPoints.length > 1) {
-    L.polyline(pathPoints, { color: 'red' }).addTo(map);
+  if (!userPath[username]) {
+    userPath[username] = []; // Initialize path for the user if not already done
+  }
+  userPath[username].push([latitude, longitude]); // Add the new point to the user's path
+  if (userPath[username].length > 1) {
+    L.polyline(userPath[username], { color: 'red' }).addTo(map);
   }
 }
 
@@ -80,6 +94,11 @@ socket.on("all-users", (users) => {
       .addTo(map)
       .bindPopup(username)
       .openPopup();
+
+    // If the user has a path, draw it
+    if (userPath[username]) {
+      L.polyline(userPath[username], { color: 'red' }).addTo(map);
+    }
   });
 });
 
@@ -94,10 +113,21 @@ socket.on("received-location", (data) => {
       .addTo(map)
       .bindPopup(username)
       .openPopup();
+    // Randomly zoom the map
+    map.flyTo([latitude, longitude], Math.random() * 10 + 10, {
+      animate: true,
+      duration: 1.5 // duration of the flight in seconds
+    });
   } else {
     // Update marker position for existing users
     markers[id].setLatLng([latitude, longitude]);
     markers[id].getPopup().setContent(username);
+  }
+
+  // Update the user's path
+  if (userPath[username]) {
+    userPath[username].push([latitude, longitude]);
+    L.polyline(userPath[username], { color: 'red' }).addTo(map);
   }
 });
 
