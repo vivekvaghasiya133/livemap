@@ -13,7 +13,7 @@ app.use(express.static(path.join(__dirname, "public")));
 const users = {}; // Store users' locations
 
 io.on("connection", function (socket) {
-  console.log("Connected: " + socket.id);
+  console.log(`Connected: ${socket.id}`);
 
   // Send all previous users' locations to the newly connected user
   socket.emit("all-users", users);
